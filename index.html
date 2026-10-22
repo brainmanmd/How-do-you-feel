@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;700&family=DM+Mono:wght@400&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;700&family=Josefin+Sans:wght@600;700&family=DM+Mono:wght@400&display=swap">
 <style>
   /* Layout: a flat Bauhaus poster ground (primary shapes + one heavy bar) with the phone set dead centre. */
   :root {
@@ -17,6 +17,7 @@
     --bezel: #141414;
     --bezel-edge: #141414;
     --font-display: "Jost", "Futura", "Century Gothic", "Avenir Next", sans-serif;
+    --font-title: "Josefin Sans", "Futura", "Century Gothic", sans-serif;
     --font-mono: "DM Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   }
   @media (prefers-color-scheme: dark) {
@@ -134,15 +135,19 @@
     display: block;
   }
 
-  .question {
+  .header {
     position: absolute;
     left: 9cqw; top: 9cqh; right: 9cqw;
+    display: grid; justify-items: start; gap: 5cqw;
+    pointer-events: none;
+  }
+  .question {
     margin: 0;
+    font-family: var(--font-title);
     font-weight: 700;
-    font-size: 10.5cqw;
-    line-height: 0.98;
-    letter-spacing: 0.01em;
-    text-transform: uppercase;
+    font-size: 11.5cqw;
+    line-height: 1.02;
+    letter-spacing: -0.01em;
     text-wrap: balance;
   }
   .question::before {
@@ -153,8 +158,6 @@
     margin-bottom: 4cqw;
   }
   .rule {
-    position: absolute;
-    left: 9cqw; top: calc(9cqh + 4.2cqw + 4cqw + 2 * 10.5cqw * 0.98 + 5cqw);
     width: 18cqw; height: 0.8cqw;
     background: var(--screen-ink);
   }
@@ -168,6 +171,11 @@
   .timer svg { width: 15cqw; height: 15cqw; overflow: visible; }
   .timer .track { fill: none; stroke: var(--screen-ink); stroke-opacity: 0.28; stroke-width: 1.5; }
   .timer .tick { stroke: var(--screen-ink); stroke-opacity: 0.55; stroke-width: 1.5; }
+  .timer svg { transition: transform 0.18s ease-out; }
+  .timer .fill { opacity: 0; transition: opacity 0.25s ease-out; }
+  .timer.pressing svg { transform: scale(0.9); }
+  .timer.pressing .fill { opacity: 1; }
+  .timer.chosen .fill { opacity: 0.7; transition-duration: 0.6s; }
   .timer .arc {
     fill: none; stroke: var(--arc, var(--screen-ink)); stroke-width: 3;
     stroke-dasharray: 150.8; stroke-dashoffset: 150.8;
@@ -295,10 +303,20 @@
     <div class="screen" id="screen" tabindex="0" role="button"
          aria-label="Press and hold to move through the colours. Let go when the colour matches how you feel.">
       <canvas id="view" aria-hidden="true"></canvas>
-      <h1 class="question">How do you feel today?</h1>
-      <div class="rule" aria-hidden="true"></div>
+      <div class="header">
+        <h1 class="question">How do you feel today?</h1>
+        <div class="rule" aria-hidden="true"></div>
+      </div>
       <div class="timer" id="timer">
         <svg viewBox="-30 -30 60 60" aria-hidden="true">
+          <defs>
+            <radialGradient id="soft-fill">
+              <stop offset="0" style="stop-color: var(--arc, #fff); stop-opacity: 0.75"></stop>
+              <stop offset="0.7" style="stop-color: var(--arc, #fff); stop-opacity: 0.35"></stop>
+              <stop offset="1" style="stop-color: var(--arc, #fff); stop-opacity: 0.12"></stop>
+            </radialGradient>
+          </defs>
+          <circle class="fill" r="22.5" fill="url(#soft-fill)"></circle>
           <circle class="track" r="24"></circle>
           <circle class="arc" id="arc" r="24"></circle>
           <g id="ticks"></g>
@@ -656,11 +674,15 @@ function buildHalvorsen({ a, points, dt }) {
   function press() {
     if (state !== "idle") return;
     state = "holding"; holdT = 0; lockT = Infinity;
+    timer.classList.add("pressing");
+    timer.style.setProperty("--arc", toHex(paletteAt(0).rgb));
     hint.textContent = "Let go to choose";
   }
   function release() {
     if (state !== "holding") return;
     state = "settling"; lockT = holdT;
+    timer.classList.remove("pressing");
+    timer.classList.add("chosen");
   }
   function lockIn() {
     state = "locked"; flare = 1;
@@ -682,6 +704,7 @@ function buildHalvorsen({ a, points, dt }) {
   function tryAgain() {
     if (state !== "locked") return;
     state = "resetting"; resetMix = 0;
+    timer.classList.remove("chosen");
     again.hidden = true; hint.hidden = false; hint.textContent = "Press and hold";
     screen.classList.remove("locked"); timer.classList.remove("locked");
     screen.focus({ preventScroll: true });
@@ -751,7 +774,7 @@ function buildHalvorsen({ a, points, dt }) {
     } else {
       const progress = (shown % C.loop) / C.loop;
       arc.style.strokeDashoffset = ARC_LEN * (1 - progress);
-      arc.style.setProperty("--arc", toHex(paletteAt(shown).rgb));
+      timer.style.setProperty("--arc", toHex(paletteAt(shown).rgb));
       const loop = Math.floor(shown / C.loop) + 1;
       loopNum.textContent = loop > 1 ? loop : "";
     }
