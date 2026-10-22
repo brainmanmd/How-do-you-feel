@@ -1,6 +1,6 @@
 # How Do You Feel Today
 
-A phone-sized mood check-in. A glowing Halvorsen attractor breathes in light green on a black screen. Pressing and holding cycles it through the colour wheel (green → blue → purple → red → orange → yellow → green, 5 s per loop) and releasing locks in the colour that matches how you feel. The page around the phone uses a minimalist Bauhaus composition.
+A phone-sized mood check-in. A glowing Halvorsen attractor breathes in light green on a black screen. Pressing and holding cycles it through the colour wheel (green → blue → purple → red → orange → yellow → green, 5.5 s per loop by default) and releasing locks in the colour that matches how you feel. The page around the phone uses a minimalist Bauhaus composition.
 
 ## Run it
 
