@@ -10,6 +10,14 @@ Open `index.html` in a recent browser. It is a single self-contained page; Three
 
 The slider panel under the phone adjusts brightness, pulse depth and speed, and the ripple's speed, wave count and bend live. "Copy values" copies the current settings as JSON. When a colour locks in, the page fires a `mood:chosen` event with the hex, OKLCH values, hold time and loop count. Every setting lives in the `CONFIG` object at the top of the script in `index.html`: attractor shape and motion, the OKLCH colour stops, pulse rate and depth, and glow.
 
+## Spectrum index and the record
+
+Every colour a person can stop on lies on one closed path through OKLab colour space (green → blue → purple → red → orange → yellow → green). The **Spectrum Index** is the distance travelled along that path, measured perceptually in OKLab and scaled to 0–100: 0 is the starting green and 100 is green again, so 0 and 100 meet. Equal steps in the index look like equal steps in colour. With the current stops, blue sits near 23, purple 36, red 59, orange 74 and yellow 88.
+
+Each reading also keeps its full 3D OKLab point (L, a, b). The (a, b) plane is the 2D view used to plot and average readings: averaging on the plane avoids the 0/100 seam, and the length of the mean vector divided by the mean chroma gives an agreement score from 0 (scattered) to 1 (identical).
+
+When published on claude.ai, each reading is saved as one document in the page's shared `readings` collection: `index`, `position` (0–6 along the stops), `hex`, `L`/`a`/`b`, `l`/`c`/`h`, `holdMs`, `loops`, `loopSeconds` and `at` (timestamp). No viewer id, name or device id is stored. Viewers need Contributor access to the page to record a reading.
+
 ## Build progress
 
 1. [x] Scaffold: phone frame, Bauhaus page, Three.js scene with bloom
