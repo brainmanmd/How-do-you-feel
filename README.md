@@ -10,7 +10,7 @@ A phone-sized mood check-in. A glowing Halvorsen attractor breathes in light gre
 
 **Locally.** Run `bash scripts/build-pages.sh` and open `_site/index.html`, or open `index.html` directly.
 
-Open `index.html` in a recent browser. It is a single self-contained page; Three.js (r147) and the Jost / DM Mono fonts load from public CDNs.
+The page needs no build tools: Three.js (r147) and the Jost, Josefin Sans and DM Mono fonts load from public CDNs.
 
 ## Tuning
 
