@@ -46,7 +46,9 @@
     position: relative;
     height: 100%;
     display: grid;
-    place-items: center;
+    grid-template-rows: minmax(0, 1fr) auto;
+    justify-items: center;
+    gap: 20px;
     padding-block: 24px;
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
@@ -67,7 +69,7 @@
   }
   .shape.square {
     width: 22vmin; height: 22vmin; background: var(--yellow);
-    left: calc(50% + 17vmin); bottom: 8vh;
+    left: calc(50% + 17vmin); bottom: 30vh;
   }
   .shape.half {
     width: 30vmin; height: 15vmin; background: var(--blue);
@@ -78,7 +80,7 @@
   .caption {
     position: absolute;
     left: max(32px, env(safe-area-inset-left, 0px));
-    bottom: 32px;
+    top: 32px;
     display: grid; gap: 6px;
     max-width: 26ch;
   }
@@ -93,9 +95,14 @@
   }
 
   /* Phone */
+  .phone-slot {
+    min-height: 0; height: 100%; width: 100%;
+    display: grid; place-items: center;
+  }
   .phone {
     position: relative;
-    width: min(390px, 100%, calc((100dvh - 48px) * 390 / 844));
+    height: 100%;
+    max-height: 844px;
     aspect-ratio: 390 / 844;
     max-width: 100%;
     padding: 10px;
@@ -171,7 +178,74 @@
     color: var(--screen-ink); opacity: 0.7;
   }
 
+  /* Tuning panel */
+  .panel {
+    width: min(1040px, 100%);
+    display: flex; flex-wrap: wrap; align-items: flex-start;
+    gap: 16px 40px;
+    padding-top: 14px;
+    border-top: 3px solid var(--ink);
+    background: var(--ground);
+  }
+  .group { flex: 1 1 300px; display: grid; gap: 10px; min-width: 0; }
+  .group h2 {
+    margin: 0; display: flex; align-items: center; gap: 8px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .group h2::before { content: ""; width: 10px; height: 10px; background: var(--swatch); }
+  .group.light { --swatch: var(--red); }
+  .group.ripple { --swatch: var(--blue); }
+  .sliders { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .field { display: grid; gap: 6px; min-width: 0; }
+  .field-head {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+    font-size: 13px; font-weight: 500;
+  }
+  .field-head output {
+    font-family: var(--font-mono); font-size: 11px; color: var(--muted);
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  .field-scale {
+    display: flex; justify-content: space-between;
+    font-family: var(--font-mono); font-size: 10px; color: var(--muted);
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  input[type="range"] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 18px; margin: 0; background: transparent; cursor: pointer;
+  }
+  input[type="range"]::-webkit-slider-runnable-track { height: 2px; background: var(--ink); }
+  input[type="range"]::-moz-range-track { height: 2px; background: var(--ink); }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 14px; height: 14px; margin-top: -6px; border: 0; border-radius: 0;
+    background: var(--swatch);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px; border: 0; border-radius: 0; background: var(--swatch);
+  }
+  input[type="range"]:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .actions label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 500; margin-right: 6px;
+  }
+  .actions input[type="checkbox"] { accent-color: var(--blue); width: 14px; height: 14px; margin: 0; }
+  .actions button {
+    font: 700 11px/1 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 10px 14px; border: 2px solid var(--ink); border-radius: 0;
+    background: transparent; color: var(--ink); cursor: pointer;
+  }
+  .actions button.primary { background: var(--ink); color: var(--ground); }
+  .actions button:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+  .actions .status { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
   @media (max-width: 760px) {
+    body { overflow: auto; }
+    .stage { height: auto; min-height: 100%; grid-template-rows: auto auto; }
+    .phone-slot { height: auto; }
+    .phone { height: auto; width: min(390px, 100%); }
+    .sliders { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .caption, .shape.half, .shape.square { display: none; }
     .shape.circle { width: 70vw; height: 70vw; left: -24vw; top: -10vw; }
     .shape.bar { width: 100%; top: 72%; }
@@ -184,6 +258,7 @@
   <div class="shape bar" aria-hidden="true"></div>
   <div class="shape square" aria-hidden="true"></div>
 
+  <div class="phone-slot">
   <div class="phone">
     <div class="screen" id="screen">
       <canvas id="view" aria-label="A glowing Halvorsen attractor that slowly breathes in light green"></canvas>
@@ -199,10 +274,28 @@
       <div class="fallback" id="fallback" hidden>This display needs WebGL. Try a recent version of Chrome, Safari or Firefox.</div>
     </div>
   </div>
+  </div>
+
+  <section class="panel" aria-label="Tune the display">
+    <div class="group light">
+      <h2>Light and pulse</h2>
+      <div class="sliders" id="sliders-light"></div>
+    </div>
+    <div class="group ripple">
+      <h2>Ripple</h2>
+      <div class="sliders" id="sliders-ripple"></div>
+    </div>
+    <div class="actions">
+      <label for="follow"><input type="checkbox" id="follow"> Ripple swells with pulse</label>
+      <button type="button" id="reset">Reset</button>
+      <button type="button" class="primary" id="copy">Copy values</button>
+      <span class="status" id="status" role="status"></span>
+    </div>
+  </section>
 
   <aside class="caption">
     <h2>Halvorsen attractor</h2>
-    <p id="spec">a = 1.4 · 200,000 points<br>12 breaths / min</p>
+    <p id="spec">a = 1.4 · 200,000 points</p>
   </aside>
 </main>
 
@@ -220,7 +313,7 @@ const CONFIG = {
     a: 1.4,           // Halvorsen parameter (1.4 is chaotic; ~1.89 collapses to a single loop)
     points: 200000,   // trajectory samples
     dt: 0.004,        // integration step
-    fill: 1.25,       // shape radius vs half the screen width (the outer tips may reach the edge)
+    fill: 1.15,       // shape radius vs half the screen width (the outer tips may reach the edge)
     pointSize: 2.0,   // CSS px
     brightness: 0.07, // per-point light; points add up where they overlap
     spin: 0.05,       // rad/s around the symmetry axis
@@ -358,21 +451,20 @@ function buildHalvorsen({ a, points, dt }) {
       uPixelRatio: { value: 1 },
       uRadius: { value: radius },
       uObjRadius: { value: radius },
-      uTime: { value: 0 },
+      uRipplePhase: { value: 0 },
       uRippleAmp: { value: 0 },
       uRippleWaves: { value: 3 },
-      uRippleSpeed: { value: 1 },
       uRippleGlow: { value: 0 },
     },
     vertexShader: `
-      uniform float uSize, uPixelRatio, uRadius, uObjRadius, uTime;
-      uniform float uRippleAmp, uRippleWaves, uRippleSpeed, uRippleGlow;
+      uniform float uSize, uPixelRatio, uRadius, uObjRadius;
+      uniform float uRippleAmp, uRippleWaves, uRipplePhase, uRippleGlow;
       varying float vShade;
       void main() {
         // Ripple: concentric waves travel outward from the centre, pushing the strands
         // in and out (and slightly toward the viewer) so the lines undulate.
         float r = length(position.xy);
-        float phase = 6.2831853 * (uRippleWaves * r / uObjRadius) - uRippleSpeed * uTime;
+        float phase = 6.2831853 * (uRippleWaves * r / uObjRadius) - uRipplePhase;
         float wave = sin(phase);
         vec2 dir = r > 0.0001 ? position.xy / r : vec2(0.0);
         vec3 p = position;
@@ -439,17 +531,21 @@ function buildHalvorsen({ a, points, dt }) {
   material.uniforms.uColor.value.setRGB(idle[0], idle[1], idle[2]);
 
   // Drop to half the points if the device can't hold ~40fps.
-  let frames = 0, sampleStart = 0, reduced = false;
+  let frames = 0, sampleStart = 0, reduced = false, pointBoost = 1;
 
+  // Phases are accumulated per frame, so moving a speed slider never makes the motion jump.
+  let breathPhase = 0, ripplePhase = 0;
   const clock = new THREE.Clock();
   function frame() {
-    const t = clock.getElapsedTime();
+    const dt = Math.min(clock.getDelta(), 0.1);
+    const t = clock.elapsedTime;
     const P = CONFIG.pulse;
 
     // Breath: 0..1, smooth sine at `perMinute`.
-    const breath = 0.5 - 0.5 * Math.cos(2 * Math.PI * (P.perMinute / 60) * t);
+    breathPhase += dt * (P.perMinute / 60);
+    const breath = 0.5 - 0.5 * Math.cos(2 * Math.PI * breathPhase);
     const depth = reduceMotion ? P.depth * 0.5 : P.depth;
-    material.uniforms.uIntensity.value = A.brightness * (1 - depth + depth * breath * 2);
+    material.uniforms.uIntensity.value = A.brightness * pointBoost * (1 - depth + depth * breath * 2);
     if (bloom) {
       const swing = P.glowFollows ? P.glowSwing : 0;
       bloom.strength = CONFIG.glow.strength * (1 - swing + swing * breath * 2);
@@ -459,10 +555,10 @@ function buildHalvorsen({ a, points, dt }) {
     const R = CONFIG.ripple;
     const motion = reduceMotion ? 0.25 : 1;
     const u = material.uniforms;
-    u.uTime.value = t * motion;
+    ripplePhase += dt * motion * (2 * Math.PI) / R.period;
+    u.uRipplePhase.value = ripplePhase;
     u.uRippleAmp.value = R.amplitude * (R.followsBreath ? 0.55 + 0.45 * breath * 2 : 1) * motion;
     u.uRippleWaves.value = R.waves;
-    u.uRippleSpeed.value = (2 * Math.PI) / R.period;
     u.uRippleGlow.value = R.glow;
 
     cloud.rotation.z = t * A.spin * motion;
@@ -479,13 +575,103 @@ function buildHalvorsen({ a, points, dt }) {
         if (ms > 25) {
           reduced = true;
           geometry.setDrawRange(0, Math.floor(A.points / 2));
-          material.uniforms.uIntensity.value *= 2;
-          A.brightness *= 2;
+          pointBoost = 2;
         }
       }
     }
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
+})();
+
+// Tuning panel: each slider runs from its lowest setting (left) to its highest (right)
+// and writes straight into CONFIG, which the render loop reads every frame.
+(function panel() {
+  const fmtPct = (v) => `${Math.round(v * 100)}%`;
+  const SLIDERS = [
+    { id: "brightness", group: "light", label: "Brightness", min: 0.02, max: 0.16, step: 0.005,
+      get: () => CONFIG.attractor.brightness, set: (v) => (CONFIG.attractor.brightness = v),
+      show: (v) => `${Math.round((v / 0.07) * 100)}%`, low: "Dim", high: "Bright" },
+    { id: "pulse-depth", group: "light", label: "Pulse depth", min: 0, max: 0.6, step: 0.01,
+      get: () => CONFIG.pulse.depth, set: (v) => (CONFIG.pulse.depth = v),
+      show: (v) => `±${fmtPct(v)}`, low: "Steady", high: "Strong" },
+    { id: "pulse-speed", group: "light", label: "Pulse speed", min: 3, max: 30, step: 1,
+      get: () => CONFIG.pulse.perMinute, set: (v) => (CONFIG.pulse.perMinute = v),
+      show: (v) => `${v} / min`, low: "Slow", high: "Fast" },
+    { id: "wave-speed", group: "ripple", label: "Wave speed", min: 1, max: 30, step: 0.5,
+      get: () => 60 / CONFIG.ripple.period, set: (v) => (CONFIG.ripple.period = 60 / v),
+      show: (v) => `${(60 / v).toFixed(1)} s`, low: "Slow", high: "Fast" },
+    { id: "wave-count", group: "ripple", label: "Waves", min: 1, max: 6, step: 0.5,
+      get: () => CONFIG.ripple.waves, set: (v) => (CONFIG.ripple.waves = v),
+      show: (v) => `${v} across`, low: "Long", high: "Tight" },
+    { id: "bend", group: "ripple", label: "Bend", min: 0, max: 0.1, step: 0.0025,
+      get: () => CONFIG.ripple.amplitude, set: (v) => (CONFIG.ripple.amplitude = v),
+      show: (v) => `${(v * 100).toFixed(1)}%`, low: "Flat", high: "Deep" },
+  ];
+  const STORE = "hdyf-tuning-v1";
+  const defaults = Object.fromEntries(SLIDERS.map((s) => [s.id, s.get()]));
+  defaults.follow = CONFIG.ripple.followsBreath;
+
+  const inputs = {};
+  for (const s of SLIDERS) {
+    const field = document.createElement("div");
+    field.className = "field";
+    field.innerHTML = `
+      <div class="field-head"><label for="${s.id}">${s.label}</label><output for="${s.id}"></output></div>
+      <input type="range" id="${s.id}" min="${s.min}" max="${s.max}" step="${s.step}">
+      <div class="field-scale" aria-hidden="true"><span>${s.low}</span><span>${s.high}</span></div>`;
+    document.getElementById(`sliders-${s.group}`).appendChild(field);
+    const input = field.querySelector("input");
+    const out = field.querySelector("output");
+    const sync = () => { const v = parseFloat(input.value); s.set(v); out.textContent = s.show(v); };
+    input.addEventListener("input", () => { sync(); save(); });
+    inputs[s.id] = { input, sync };
+  }
+  const follow = document.getElementById("follow");
+  follow.addEventListener("change", () => { CONFIG.ripple.followsBreath = follow.checked; save(); });
+
+  function apply(values) {
+    for (const s of SLIDERS) {
+      if (typeof values[s.id] === "number") inputs[s.id].input.value = values[s.id];
+      inputs[s.id].sync();
+    }
+    follow.checked = values.follow ?? defaults.follow;
+    CONFIG.ripple.followsBreath = follow.checked;
+  }
+  function current() {
+    const v = Object.fromEntries(SLIDERS.map((s) => [s.id, parseFloat(inputs[s.id].input.value)]));
+    v.follow = follow.checked;
+    return v;
+  }
+  function save() { try { localStorage.setItem(STORE, JSON.stringify(current())); } catch (e) {} }
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(STORE) || "{}") || {}; } catch (e) {}
+  apply({ ...defaults, ...saved });
+
+  const status = document.getElementById("status");
+  const say = (msg) => { status.textContent = msg; clearTimeout(say.t); say.t = setTimeout(() => (status.textContent = ""), 2500); };
+
+  document.getElementById("reset").addEventListener("click", () => {
+    apply(defaults); save(); say("Back to defaults");
+  });
+  document.getElementById("copy").addEventListener("click", () => {
+    const text = JSON.stringify({
+      attractor: { brightness: CONFIG.attractor.brightness },
+      pulse: { perMinute: CONFIG.pulse.perMinute, depth: CONFIG.pulse.depth },
+      ripple: {
+        period: +CONFIG.ripple.period.toFixed(2), waves: CONFIG.ripple.waves,
+        amplitude: CONFIG.ripple.amplitude, followsBreath: CONFIG.ripple.followsBreath,
+      },
+    }, null, 2);
+    const fallback = () => {
+      const ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      say("Press Ctrl+C / ⌘C to copy");
+      setTimeout(() => ta.remove(), 8000);
+    };
+    try {
+      navigator.clipboard.writeText(text).then(() => say("Copied. Paste it to Claude"), fallback);
+    } catch (e) { fallback(); }
+  });
 })();
 </script>

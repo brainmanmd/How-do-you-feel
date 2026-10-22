@@ -8,7 +8,7 @@ Open `index.html` in a recent browser. It is a single self-contained page; Three
 
 ## Tuning
 
-Every setting lives in the `CONFIG` object at the top of the script in `index.html`: attractor shape and motion, the OKLCH colour stops, pulse rate and depth, and glow.
+The slider panel under the phone adjusts brightness, pulse depth and speed, and the ripple's speed, wave count and bend live. "Copy values" copies the current settings as JSON. Every setting lives in the `CONFIG` object at the top of the script in `index.html`: attractor shape and motion, the OKLCH colour stops, pulse rate and depth, and glow.
 
 ## Build progress
 
