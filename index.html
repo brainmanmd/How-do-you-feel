@@ -1105,7 +1105,7 @@ function buildHalvorsen({ a, points, dt }) {
   };
   add(plane, "line", { class: "axis", x1: -120, y1: 0, x2: 120, y2: 0 });
   add(plane, "line", { class: "axis", x1: 0, y1: -120, x2: 0, y2: 120 });
-  for (const [x, y, label, anchor] of [[124, 3, "+a", "start"], [-124, 3, "−a", "end"], [0, -122, "+b", "middle"], [0, 129, "−b", "middle"]]) {
+  for (const [x, y, label, anchor] of [[120, -5, "+a", "end"], [-120, -5, "−a", "start"], [5, -112, "+b", "start"], [5, 118, "−b", "start"]]) {
     add(plane, "text", { class: "axis-label", x, y, "text-anchor": anchor }).textContent = label;
   }
   const P = (lab) => [lab.a * SCALE, -lab.b * SCALE];
