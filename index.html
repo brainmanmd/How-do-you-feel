@@ -131,6 +131,9 @@
   .feedback .note.warn { color: var(--red); }
   .feedback .record { padding-top: 10px; border-top: 2px solid var(--ink); }
 
+  /* The static-hosting build (scripts/build-pages.sh) has no shared database yet */
+  html.standalone .feedback { display: none; }
+
   /* Two views share one page: the check-in, and #readings for the owner */
   body[data-view="readings"] { overflow: auto; }
   body[data-view="readings"] .stage { display: none; }

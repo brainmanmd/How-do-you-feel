@@ -4,6 +4,12 @@ A phone-sized mood check-in. A glowing Halvorsen attractor breathes in light gre
 
 ## Run it
 
+**Public test link (GitHub Pages).** Every push to `main` runs `.github/workflows/pages.yml`, which builds a standalone copy with `scripts/build-pages.sh` and deploys it. The hosted copy has no shared database yet, so readings and feedback are not saved there and the feedback box is hidden. One-time setup: repo Settings → Pages → Build and deployment → Source: **GitHub Actions**. The site appears at `https://brainmanmd.github.io/How-do-you-feel/`.
+
+**claude.ai Artifact.** `index.html` is written for claude.ai Artifacts, where readings and feedback are saved anonymously.
+
+**Locally.** Run `bash scripts/build-pages.sh` and open `_site/index.html`, or open `index.html` directly.
+
 Open `index.html` in a recent browser. It is a single self-contained page; Three.js (r147) and the Jost / DM Mono fonts load from public CDNs.
 
 ## Tuning
