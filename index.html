@@ -220,7 +220,7 @@ const CONFIG = {
     a: 1.4,           // Halvorsen parameter (1.4 is chaotic; ~1.89 collapses to a single loop)
     points: 200000,   // trajectory samples
     dt: 0.004,        // integration step
-    fill: 0.92,       // share of screen width the shape spans
+    fill: 1.25,       // shape radius vs half the screen width (the outer tips may reach the edge)
     pointSize: 2.0,   // CSS px
     brightness: 0.07, // per-point light; points add up where they overlap
     spin: 0.05,       // rad/s around the symmetry axis
@@ -232,8 +232,16 @@ const CONFIG = {
   },
   pulse: {
     perMinute: 12,    // breaths per minute
-    depth: 0.35,      // 0..1 brightness swing
+    depth: 0.16,      // 0..1 brightness swing
     glowFollows: true,
+    glowSwing: 0.25,  // 0..1 bloom swing when glowFollows is on
+  },
+  ripple: {
+    amplitude: 0.022, // displacement as a share of the shape's radius
+    waves: 3,         // crests between the centre and the outer edge
+    period: 2.6,      // seconds for one crest to travel outward
+    glow: 0.3,        // extra light riding on each crest
+    followsBreath: true, // ripple swells with the pulse
   },
   glow: { strength: 1.0, radius: 0.6, threshold: 0.05 },
 };
@@ -349,17 +357,34 @@ function buildHalvorsen({ a, points, dt }) {
       uSize: { value: A.pointSize },
       uPixelRatio: { value: 1 },
       uRadius: { value: radius },
+      uObjRadius: { value: radius },
+      uTime: { value: 0 },
+      uRippleAmp: { value: 0 },
+      uRippleWaves: { value: 3 },
+      uRippleSpeed: { value: 1 },
+      uRippleGlow: { value: 0 },
     },
     vertexShader: `
-      uniform float uSize, uPixelRatio, uRadius;
+      uniform float uSize, uPixelRatio, uRadius, uObjRadius, uTime;
+      uniform float uRippleAmp, uRippleWaves, uRippleSpeed, uRippleGlow;
       varying float vShade;
       void main() {
-        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        // Ripple: concentric waves travel outward from the centre, pushing the strands
+        // in and out (and slightly toward the viewer) so the lines undulate.
+        float r = length(position.xy);
+        float phase = 6.2831853 * (uRippleWaves * r / uObjRadius) - uRippleSpeed * uTime;
+        float wave = sin(phase);
+        vec2 dir = r > 0.0001 ? position.xy / r : vec2(0.0);
+        vec3 p = position;
+        p.xy += dir * wave * uRippleAmp * uObjRadius;
+        p.z += cos(phase) * uRippleAmp * uObjRadius * 0.6;
+
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
         gl_Position = projectionMatrix * mv;
         gl_PointSize = uSize * uPixelRatio;
         // Points nearer the camera read slightly brighter, which gives the cloud depth.
         float depth = clamp((mv.z + 40.0) / (uRadius * 1.0), -1.0, 1.0);
-        vShade = 0.7 + 0.3 * depth;
+        vShade = (0.7 + 0.3 * depth) * (1.0 + uRippleGlow * wave);
       }`,
     fragmentShader: `
       uniform vec3 uColor;
@@ -424,13 +449,22 @@ function buildHalvorsen({ a, points, dt }) {
     // Breath: 0..1, smooth sine at `perMinute`.
     const breath = 0.5 - 0.5 * Math.cos(2 * Math.PI * (P.perMinute / 60) * t);
     const depth = reduceMotion ? P.depth * 0.5 : P.depth;
-    material.uniforms.uIntensity.value = A.brightness * (1 - depth + depth * breath * 2) ;
+    material.uniforms.uIntensity.value = A.brightness * (1 - depth + depth * breath * 2);
     if (bloom) {
-      bloom.strength = CONFIG.glow.strength * (P.glowFollows ? 0.7 + 0.6 * breath : 1);
+      const swing = P.glowFollows ? P.glowSwing : 0;
+      bloom.strength = CONFIG.glow.strength * (1 - swing + swing * breath * 2);
       bloom.radius = CONFIG.glow.radius;
     }
 
+    const R = CONFIG.ripple;
     const motion = reduceMotion ? 0.25 : 1;
+    const u = material.uniforms;
+    u.uTime.value = t * motion;
+    u.uRippleAmp.value = R.amplitude * (R.followsBreath ? 0.55 + 0.45 * breath * 2 : 1) * motion;
+    u.uRippleWaves.value = R.waves;
+    u.uRippleSpeed.value = (2 * Math.PI) / R.period;
+    u.uRippleGlow.value = R.glow;
+
     cloud.rotation.z = t * A.spin * motion;
     holder.rotation.x = A.tilt + A.sway * Math.sin(t * 0.11 * motion);
     holder.rotation.y = A.sway * Math.cos(t * 0.07 * motion);
