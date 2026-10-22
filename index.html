@@ -174,8 +174,8 @@
   .timer svg { transition: transform 0.18s ease-out; }
   .timer .fill { opacity: 0; transition: opacity 0.25s ease-out; }
   .timer.pressing svg { transform: scale(0.9); }
-  .timer.pressing .fill { opacity: 1; }
-  .timer.chosen .fill { opacity: 0.7; transition-duration: 0.6s; }
+  .timer.pressing .fill { opacity: var(--fill-strength, 0.6); }
+  .timer.chosen .fill { opacity: calc(var(--fill-strength, 0.6) * 0.7); transition-duration: 0.6s; }
   .timer .arc {
     fill: none; stroke: var(--arc, var(--screen-ink)); stroke-width: 3;
     stroke-dasharray: 150.8; stroke-dashoffset: 150.8;
@@ -218,14 +218,17 @@
 
   /* Tuning panel */
   .panel {
-    width: min(1240px, 100%);
-    display: flex; flex-wrap: wrap; align-items: flex-start;
-    gap: 16px 40px;
+    width: min(1280px, 100%);
+    display: grid; grid-template-columns: 3fr 3fr 3fr 2fr; align-items: start;
+    gap: 16px 32px;
     padding-top: 14px;
     border-top: 3px solid var(--ink);
     background: var(--ground);
   }
-  .group { flex: 1 1 300px; display: grid; gap: 10px; min-width: 0; }
+  .group { display: grid; gap: 10px; min-width: 0; }
+  .panel .actions { grid-column: 1 / -1; }
+  .group.glow .sliders { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (max-width: 1100px) { .panel { grid-template-columns: 1fr 1fr; } }
   .group h2 {
     margin: 0; display: flex; align-items: center; gap: 8px;
     font-size: 12px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase;
@@ -234,10 +237,11 @@
   .group.light { --swatch: var(--red); }
   .group.ripple { --swatch: var(--blue); }
   .group.wave { --swatch: var(--yellow); --edge: var(--ink); }
+  .group.glow { --swatch: var(--ink); }
   .sliders { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
   .field { display: grid; gap: 6px; min-width: 0; }
   .field-head {
-    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0 8px;
+    display: grid; gap: 2px;
     font-size: 13px; font-weight: 500;
   }
   .field-head output {
@@ -245,7 +249,7 @@
     font-variant-numeric: tabular-nums; white-space: nowrap;
   }
   .field-scale {
-    display: flex; justify-content: space-between;
+    display: flex; justify-content: space-between; gap: 6px;
     font-family: var(--font-mono); font-size: 10px; color: var(--muted);
     letter-spacing: 0.08em; text-transform: uppercase;
   }
@@ -281,6 +285,7 @@
   .actions .status { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
 
   @media (max-width: 760px) {
+    .panel { grid-template-columns: 1fr; }
     body { overflow: auto; }
     .stage { height: auto; min-height: 100%; grid-template-rows: auto auto; }
     .phone-slot { height: auto; }
@@ -342,6 +347,10 @@
     <div class="group ripple">
       <h2>Ripple</h2>
       <div class="sliders" id="sliders-ripple"></div>
+    </div>
+    <div class="group glow">
+      <h2>Glow</h2>
+      <div class="sliders" id="sliders-glow"></div>
     </div>
     <div class="actions">
       <label for="follow"><input type="checkbox" id="follow"> Ripple swells with pulse</label>
@@ -412,6 +421,7 @@ const CONFIG = {
     followsBreath: true, // ripple swells with the pulse
   },
   glow: { strength: 1.0, radius: 0.6, threshold: 0.05 },
+  button: { glow: 0.6 }, // strength of the soft colour fill inside the timer ring (0..1)
 };
 
 // OKLCH -> gamma-encoded sRGB (0..1), clamped.
@@ -832,7 +842,7 @@ function buildHalvorsen({ a, points, dt }) {
       show: (v) => `${v} s`, low: "Short", high: "Long" },
     { id: "wave-lag", group: "wave", label: "Wave lag", min: 0, max: 1, step: 0.05,
       get: () => CONFIG.color.lag, set: (v) => (CONFIG.color.lag = v),
-      show: (v) => `${v.toFixed(2)} s`, low: "Together", high: "Trailing" },
+      show: (v) => `${v.toFixed(2)} s`, low: "Short", high: "Long" },
     { id: "wave-light", group: "wave", label: "Wave light", min: 0, max: 1.5, step: 0.05,
       get: () => CONFIG.color.band, set: (v) => (CONFIG.color.band = v),
       show: (v) => `+${Math.round(v * 100)}%`, low: "None", high: "Strong" },
@@ -854,6 +864,13 @@ function buildHalvorsen({ a, points, dt }) {
     { id: "bend", group: "ripple", label: "Bend", min: 0, max: 0.1, step: 0.0025,
       get: () => CONFIG.ripple.amplitude, set: (v) => (CONFIG.ripple.amplitude = v),
       show: (v) => `${(v * 100).toFixed(1)}%`, low: "Flat", high: "Deep" },
+    { id: "shape-glow", group: "glow", label: "Shape glow", min: 0, max: 2.5, step: 0.05,
+      get: () => CONFIG.glow.strength, set: (v) => (CONFIG.glow.strength = v),
+      show: (v) => `${Math.round(v * 100)}%`, low: "None", high: "Strong" },
+    { id: "button-glow", group: "glow", label: "Button glow", min: 0, max: 1, step: 0.05,
+      get: () => CONFIG.button.glow,
+      set: (v) => { CONFIG.button.glow = v; document.getElementById("timer").style.setProperty("--fill-strength", v); },
+      show: (v) => `${Math.round(v * 100)}%`, low: "None", high: "Strong" },
   ];
   const STORE = "hdyf-tuning-v2";
   const defaults = Object.fromEntries(SLIDERS.map((s) => [s.id, s.get()]));
@@ -903,6 +920,7 @@ function buildHalvorsen({ a, points, dt }) {
   });
   document.getElementById("copy").addEventListener("click", () => {
     const text = JSON.stringify({
+      glow: { strength: CONFIG.glow.strength }, button: { glow: CONFIG.button.glow },
       color: { loop: CONFIG.color.loop, lag: CONFIG.color.lag, band: CONFIG.color.band },
       attractor: { brightness: CONFIG.attractor.brightness },
       pulse: { perMinute: CONFIG.pulse.perMinute, depth: CONFIG.pulse.depth },
