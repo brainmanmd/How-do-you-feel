@@ -82,7 +82,7 @@
     left: max(32px, env(safe-area-inset-left, 0px));
     top: 32px;
     display: grid; gap: 6px;
-    max-width: 26ch;
+    max-width: 40ch;
   }
   .caption h2 {
     margin: 0; font-weight: 700; font-size: 15px;
@@ -93,6 +93,8 @@
     color: var(--muted); line-height: 1.6;
     font-variant-numeric: tabular-nums;
   }
+  .caption .choice { display: flex; align-items: center; gap: 8px; color: var(--ink); }
+  .caption .choice i { width: 12px; height: 12px; background: var(--chosen, transparent); box-shadow: 0 0 0 1px var(--ink); }
 
   /* Phone */
   .phone-slot {
@@ -121,7 +123,11 @@
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    cursor: pointer;
   }
+  .screen:focus-visible { outline: 3px solid var(--red); outline-offset: 4px; }
+  .screen.locked { cursor: default; }
   .screen canvas {
     position: absolute; inset: 0;
     width: 100%; height: 100%;
@@ -162,6 +168,30 @@
   .timer svg { width: 15cqw; height: 15cqw; overflow: visible; }
   .timer .track { fill: none; stroke: var(--screen-ink); stroke-opacity: 0.28; stroke-width: 1.5; }
   .timer .tick { stroke: var(--screen-ink); stroke-opacity: 0.55; stroke-width: 1.5; }
+  .timer .arc {
+    fill: none; stroke: var(--arc, var(--screen-ink)); stroke-width: 3;
+    stroke-dasharray: 150.8; stroke-dashoffset: 150.8;
+    transform: rotate(-90deg);
+  }
+  .timer .loop-num {
+    fill: var(--screen-ink); opacity: 0.8;
+    font-family: var(--font-mono); font-size: 11px;
+    text-anchor: middle; dominant-baseline: central;
+  }
+  .timer.locked svg { animation: lock-pulse 0.9s ease-out 1; }
+  @keyframes lock-pulse {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.18); }
+    100% { transform: scale(1); }
+  }
+  .timer .again {
+    font-family: var(--font-mono); font-size: 2.9cqw;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--screen-ink); background: transparent;
+    border: 1px solid var(--screen-ink); border-radius: 0;
+    padding: 1.6cqw 3.2cqw; cursor: pointer;
+  }
+  .timer .again:focus-visible { outline: 2px solid var(--red); outline-offset: 3px; }
   .timer .hint {
     font-family: var(--font-mono);
     font-size: 2.9cqw;
@@ -180,7 +210,7 @@
 
   /* Tuning panel */
   .panel {
-    width: min(1040px, 100%);
+    width: min(1240px, 100%);
     display: flex; flex-wrap: wrap; align-items: flex-start;
     gap: 16px 40px;
     padding-top: 14px;
@@ -195,10 +225,11 @@
   .group h2::before { content: ""; width: 10px; height: 10px; background: var(--swatch); }
   .group.light { --swatch: var(--red); }
   .group.ripple { --swatch: var(--blue); }
+  .group.wave { --swatch: var(--yellow); --edge: var(--ink); }
   .sliders { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
   .field { display: grid; gap: 6px; min-width: 0; }
   .field-head {
-    display: flex; justify-content: space-between; align-items: baseline; gap: 8px;
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0 8px;
     font-size: 13px; font-weight: 500;
   }
   .field-head output {
@@ -219,10 +250,11 @@
   input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none; appearance: none;
     width: 14px; height: 14px; margin-top: -6px; border: 0; border-radius: 0;
-    background: var(--swatch);
+    background: var(--swatch); box-shadow: 0 0 0 1px var(--edge, transparent);
   }
   input[type="range"]::-moz-range-thumb {
     width: 14px; height: 14px; border: 0; border-radius: 0; background: var(--swatch);
+    box-shadow: 0 0 0 1px var(--edge, transparent);
   }
   input[type="range"]:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
   .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
@@ -260,16 +292,20 @@
 
   <div class="phone-slot">
   <div class="phone">
-    <div class="screen" id="screen">
-      <canvas id="view" aria-label="A glowing Halvorsen attractor that slowly breathes in light green"></canvas>
+    <div class="screen" id="screen" tabindex="0" role="button"
+         aria-label="Press and hold to move through the colours. Let go when the colour matches how you feel.">
+      <canvas id="view" aria-hidden="true"></canvas>
       <h1 class="question">How do you feel today?</h1>
       <div class="rule" aria-hidden="true"></div>
-      <div class="timer">
+      <div class="timer" id="timer">
         <svg viewBox="-30 -30 60 60" aria-hidden="true">
           <circle class="track" r="24"></circle>
+          <circle class="arc" id="arc" r="24"></circle>
           <g id="ticks"></g>
+          <text class="loop-num" id="loop-num" x="0" y="0"></text>
         </svg>
-        <span class="hint">Press and hold</span>
+        <span class="hint" id="hint">Press and hold</span>
+        <button type="button" class="again" id="again" hidden>Try again</button>
       </div>
       <div class="fallback" id="fallback" hidden>This display needs WebGL. Try a recent version of Chrome, Safari or Firefox.</div>
     </div>
@@ -277,6 +313,10 @@
   </div>
 
   <section class="panel" aria-label="Tune the display">
+    <div class="group wave">
+      <h2>Colour wave</h2>
+      <div class="sliders" id="sliders-wave"></div>
+    </div>
     <div class="group light">
       <h2>Light and pulse</h2>
       <div class="sliders" id="sliders-light"></div>
@@ -296,6 +336,7 @@
   <aside class="caption">
     <h2>Halvorsen attractor</h2>
     <p id="spec">a = 1.4 · 200,000 points</p>
+    <p class="choice" id="choice" hidden><i></i><span></span></p>
   </aside>
 </main>
 
@@ -307,7 +348,7 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/ShaderPass.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 <script>
-// Every tunable lives here. The tweak panel (step 8) will read and write this object.
+// Every tunable lives here. The slider panel reads and writes this object live.
 const CONFIG = {
   attractor: {
     a: 1.4,           // Halvorsen parameter (1.4 is chaotic; ~1.89 collapses to a single loop)
@@ -321,13 +362,29 @@ const CONFIG = {
     sway: 0.12,       // rad, slow wobble on top of the tilt
   },
   color: {
-    idle: { l: 0.88, c: 0.10, h: 145 }, // light green, OKLCH
+    // OKLCH stops in order. Hues are unwrapped (25 -> 385 ...) so the cycle always turns the same way.
+    stops: [
+      { name: "green",  l: 0.88, c: 0.10, h: 145 }, // idle colour
+      { name: "blue",   l: 0.72, c: 0.14, h: 250 },
+      { name: "purple", l: 0.68, c: 0.17, h: 305 },
+      { name: "red",    l: 0.64, c: 0.21, h: 385 },
+      { name: "orange", l: 0.78, c: 0.16, h: 415 },
+      { name: "yellow", l: 0.91, c: 0.17, h: 455 },
+      { name: "green",  l: 0.88, c: 0.10, h: 505 },
+    ],
+    loop: 5,          // seconds for one full trip round the wheel
+    dwell: 0.15,      // share of each segment spent resting on the pure stop
+    lag: 0.35,        // seconds the top of the shape trails the bottom
+    band: 0.6,        // extra light on the wave front while colours change
+    flare: 0.9,       // brightness kick when a colour locks in
+    resetTime: 0.8,   // seconds to fade back to green on "Try again"
   },
   pulse: {
     perMinute: 12,    // breaths per minute
     depth: 0.16,      // 0..1 brightness swing
     glowFollows: true,
     glowSwing: 0.25,  // 0..1 bloom swing when glowFollows is on
+    holdSpeedup: 1.5, // breath quickens while the screen is held
   },
   ripple: {
     amplitude: 0.035, // displacement as a share of the shape's radius
@@ -357,6 +414,19 @@ function oklchToRgb({ l, c, h }) {
     return v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055;
   });
 }
+
+// Colour at a given hold time. Mirrors paletteAt() in the vertex shader.
+function paletteAt(time) {
+  const C = CONFIG.color, S = C.stops;
+  const n = S.length - 1;
+  const s = (((time / C.loop) % 1) + 1) % 1 * n;
+  const i = Math.min(Math.floor(s), n - 1), f = s - i;
+  const g = Math.min(1, Math.max(0, (f - C.dwell) / Math.max(1 - C.dwell, 0.001)));
+  const e = g * g * (3 - 2 * g);
+  const lch = { l: S[i].l + (S[i + 1].l - S[i].l) * e, c: S[i].c + (S[i + 1].c - S[i].c) * e, h: S[i].h + (S[i + 1].h - S[i].h) * e };
+  return { lch: { l: lch.l, c: lch.c, h: ((lch.h % 360) + 360) % 360 }, rgb: oklchToRgb(lch) };
+}
+const toHex = (rgb) => "#" + rgb.map((v) => Math.round(v * 255).toString(16).padStart(2, "0")).join("");
 
 // Halvorsen system, integrated with RK4.
 function buildHalvorsen({ a, points, dt }) {
@@ -445,8 +515,15 @@ function buildHalvorsen({ a, points, dt }) {
 
   const material = new THREE.ShaderMaterial({
     uniforms: {
-      uColor: { value: new THREE.Color() },
       uIntensity: { value: A.brightness },
+      uStops: { value: CONFIG.color.stops.map((s) => new THREE.Vector3(s.l, s.c, s.h)) },
+      uLoop: { value: 5 },
+      uDwell: { value: 0.15 },
+      uHold: { value: 0 },
+      uLock: { value: 1e6 },
+      uLag: { value: 0.35 },
+      uBand: { value: 0.6 },
+      uResetMix: { value: 0 },
       uSize: { value: A.pointSize },
       uPixelRatio: { value: 1 },
       uRadius: { value: radius },
@@ -459,7 +536,27 @@ function buildHalvorsen({ a, points, dt }) {
     vertexShader: `
       uniform float uSize, uPixelRatio, uRadius, uObjRadius;
       uniform float uRippleAmp, uRippleWaves, uRipplePhase, uRippleGlow;
+      uniform vec3 uStops[7];
+      uniform float uLoop, uDwell, uHold, uLock, uLag, uBand, uResetMix;
       varying float vShade;
+      varying vec3 vColor;
+
+      vec3 oklchToSrgb(vec3 lch) {
+        float h = radians(lch.z);
+        float a = lch.y * cos(h), b = lch.y * sin(h);
+        float l_ = lch.x + 0.3963377774 * a + 0.2158037573 * b;
+        float m_ = lch.x - 0.1055613458 * a - 0.0638541728 * b;
+        float s_ = lch.x - 0.0894841775 * a - 1.2914855480 * b;
+        float L = l_ * l_ * l_, M = m_ * m_ * m_, S = s_ * s_ * s_;
+        vec3 lin = clamp(vec3(
+           4.0767416621 * L - 3.3077115913 * M + 0.2309699292 * S,
+          -1.2684380046 * L + 2.6097574011 * M - 0.3413193965 * S,
+          -0.0041960863 * L - 0.7034186147 * M + 1.7076147010 * S), 0.0, 1.0);
+        vec3 lo = lin * 12.92;
+        vec3 hi = 1.055 * pow(lin, vec3(1.0 / 2.4)) - 0.055;
+        return mix(lo, hi, step(vec3(0.0031308), lin));
+      }
+
       void main() {
         // Ripple: concentric waves travel outward from the centre, pushing the strands
         // in and out (and slightly toward the viewer) so the lines undulate.
@@ -476,16 +573,34 @@ function buildHalvorsen({ a, points, dt }) {
         gl_PointSize = uSize * uPixelRatio;
         // Points nearer the camera read slightly brighter, which gives the cloud depth.
         float depth = clamp((mv.z + 40.0) / (uRadius * 1.0), -1.0, 1.0);
-        vShade = (0.7 + 0.3 * depth) * (1.0 + uRippleGlow * wave);
+
+        // Colour wave: each point reads the cycle at (hold time - lag x height), so new
+        // colours enter at the bottom and rise. Points stop at the locked time on release.
+        float height = clamp(0.5 + mv.y / (2.0 * uRadius), 0.0, 1.0);
+        float tp = max(min(uHold - uLag * height, uLock), 0.0);
+        float s = fract(tp / uLoop) * 6.0;
+        float i = min(floor(s), 5.0);
+        float f = s - i;
+        float g = clamp((f - uDwell) / max(1.0 - uDwell, 0.001), 0.0, 1.0);
+        float e = g * g * (3.0 - 2.0 * g);
+        int ii = int(i);
+        vec3 lch = mix(uStops[ii], uStops[ii + 1], e);
+        vColor = mix(oklchToSrgb(lch), oklchToSrgb(uStops[0]), uResetMix);
+
+        // Bright band: strongest where a point is mid-way between two colours.
+        float moving = tp < uLock - 0.0001 ? 1.0 : 0.0;
+        float band = 4.0 * g * (1.0 - g) * moving * step(0.0001, tp);
+
+        vShade = (0.7 + 0.3 * depth) * (1.0 + uRippleGlow * wave) * (1.0 + uBand * band);
       }`,
     fragmentShader: `
-      uniform vec3 uColor;
       uniform float uIntensity;
       varying float vShade;
+      varying vec3 vColor;
       void main() {
         float d = length(gl_PointCoord - 0.5);
         float soft = smoothstep(0.5, 0.0, d);
-        gl_FragColor = vec4(uColor * uIntensity * vShade * soft, 1.0);
+        gl_FragColor = vec4(vColor * uIntensity * vShade * soft, 1.0);
       }`,
     blending: THREE.AdditiveBlending,
     depthTest: false,
@@ -527,8 +642,73 @@ function buildHalvorsen({ a, points, dt }) {
   new ResizeObserver(resize).observe(screen);
   resize();
 
-  const idle = oklchToRgb(CONFIG.color.idle);
-  material.uniforms.uColor.value.setRGB(idle[0], idle[1], idle[2]);
+  // ---- Press / release ----
+  // idle -> holding (press) -> settling (released; the top catches up) -> locked -> resetting -> idle
+  const timer = document.getElementById("timer");
+  const arc = document.getElementById("arc");
+  const loopNum = document.getElementById("loop-num");
+  const hint = document.getElementById("hint");
+  const again = document.getElementById("again");
+  const choice = document.getElementById("choice");
+  const ARC_LEN = 2 * Math.PI * 24;
+  let state = "idle", holdT = 0, lockT = Infinity, flare = 0, resetMix = 0;
+
+  function press() {
+    if (state !== "idle") return;
+    state = "holding"; holdT = 0; lockT = Infinity;
+    hint.textContent = "Let go to choose";
+  }
+  function release() {
+    if (state !== "holding") return;
+    state = "settling"; lockT = holdT;
+  }
+  function lockIn() {
+    state = "locked"; flare = 1;
+    screen.classList.add("locked");
+    timer.classList.remove("locked"); void timer.offsetWidth; timer.classList.add("locked");
+    hint.hidden = true; again.hidden = false;
+    const { lch, rgb } = paletteAt(lockT);
+    const hex = toHex(rgb);
+    choice.hidden = false;
+    choice.style.setProperty("--chosen", hex);
+    choice.querySelector("span").textContent =
+      `Last choice ${hex} · held ${lockT.toFixed(1)} s`;
+    screen.dispatchEvent(new CustomEvent("mood:chosen", { bubbles: true, detail: {
+      hex, oklch: { l: +lch.l.toFixed(3), c: +lch.c.toFixed(3), h: +lch.h.toFixed(1) },
+      holdMs: Math.round(lockT * 1000), loops: Math.floor(lockT / CONFIG.color.loop) + 1,
+      at: new Date().toISOString(),
+    } }));
+  }
+  function tryAgain() {
+    if (state !== "locked") return;
+    state = "resetting"; resetMix = 0;
+    again.hidden = true; hint.hidden = false; hint.textContent = "Press and hold";
+    screen.classList.remove("locked"); timer.classList.remove("locked");
+    screen.focus({ preventScroll: true });
+  }
+
+  screen.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0 || e.target === again) return;
+    if (state !== "idle") return;
+    screen.setPointerCapture?.(e.pointerId);
+    e.preventDefault();
+    press();
+  });
+  for (const type of ["pointerup", "pointercancel", "lostpointercapture"]) {
+    screen.addEventListener(type, release);
+  }
+  screen.addEventListener("contextmenu", (e) => e.preventDefault());
+  screen.addEventListener("keydown", (e) => {
+    if ((e.key === " " || e.key === "Enter") && e.target === screen) {
+      e.preventDefault();
+      if (!e.repeat) press();
+    }
+  });
+  screen.addEventListener("keyup", (e) => {
+    if ((e.key === " " || e.key === "Enter") && e.target === screen) release();
+  });
+  again.addEventListener("click", tryAgain);
+  again.addEventListener("pointerdown", (e) => e.stopPropagation());
 
   // Drop to half the points if the device can't hold ~40fps.
   let frames = 0, sampleStart = 0, reduced = false, pointBoost = 1;
@@ -541,20 +721,55 @@ function buildHalvorsen({ a, points, dt }) {
     const t = clock.elapsedTime;
     const P = CONFIG.pulse;
 
-    // Breath: 0..1, smooth sine at `perMinute`.
-    breathPhase += dt * (P.perMinute / 60);
+    const C = CONFIG.color;
+    const u = material.uniforms;
+
+    // Advance the colour clock. After release it keeps running for `lag` seconds so the
+    // top of the shape catches up to the locked colour, then the flare fires.
+    if (state === "holding" || state === "settling") holdT += dt;
+    if (state === "settling" && holdT >= lockT + C.lag) lockIn();
+    if (state === "resetting") {
+      resetMix = Math.min(1, resetMix + dt / C.resetTime);
+      if (resetMix >= 1) { state = "idle"; holdT = 0; lockT = Infinity; resetMix = 0; }
+    }
+    flare *= Math.exp(-dt / 0.6);
+
+    u.uLoop.value = C.loop;
+    u.uDwell.value = C.dwell;
+    u.uLag.value = C.lag;
+    u.uBand.value = C.band;
+    u.uHold.value = holdT;
+    u.uLock.value = Number.isFinite(lockT) ? lockT : 1e6;
+    u.uResetMix.value = resetMix;
+    C.stops.forEach((st, i) => u.uStops.value[i].set(st.l, st.c, st.h));
+
+    // Timer ring: one clockwise sweep per loop, drawn in the leading colour.
+    const shown = Math.min(holdT, lockT);
+    if (state === "idle" || state === "resetting") {
+      arc.style.strokeDashoffset = ARC_LEN;
+      loopNum.textContent = "";
+    } else {
+      const progress = (shown % C.loop) / C.loop;
+      arc.style.strokeDashoffset = ARC_LEN * (1 - progress);
+      arc.style.setProperty("--arc", toHex(paletteAt(shown).rgb));
+      const loop = Math.floor(shown / C.loop) + 1;
+      loopNum.textContent = loop > 1 ? loop : "";
+    }
+
+    // Breath: 0..1, smooth sine at `perMinute` (quicker while held).
+    const busy = state === "holding" || state === "settling";
+    breathPhase += dt * (P.perMinute / 60) * (busy ? P.holdSpeedup : 1);
     const breath = 0.5 - 0.5 * Math.cos(2 * Math.PI * breathPhase);
     const depth = reduceMotion ? P.depth * 0.5 : P.depth;
-    material.uniforms.uIntensity.value = A.brightness * pointBoost * (1 - depth + depth * breath * 2);
+    u.uIntensity.value = A.brightness * pointBoost * (1 - depth + depth * breath * 2) * (1 + C.flare * flare);
     if (bloom) {
       const swing = P.glowFollows ? P.glowSwing : 0;
-      bloom.strength = CONFIG.glow.strength * (1 - swing + swing * breath * 2);
+      bloom.strength = CONFIG.glow.strength * (1 - swing + swing * breath * 2) * (1 + 0.8 * C.flare * flare);
       bloom.radius = CONFIG.glow.radius;
     }
 
     const R = CONFIG.ripple;
     const motion = reduceMotion ? 0.25 : 1;
-    const u = material.uniforms;
     ripplePhase += dt * motion * (2 * Math.PI) / R.period;
     u.uRipplePhase.value = ripplePhase;
     u.uRippleAmp.value = R.amplitude * (R.followsBreath ? 0.55 + 0.45 * breath * 2 : 1) * motion;
@@ -589,6 +804,15 @@ function buildHalvorsen({ a, points, dt }) {
 (function panel() {
   const fmtPct = (v) => `${Math.round(v * 100)}%`;
   const SLIDERS = [
+    { id: "loop-length", group: "wave", label: "Loop length", min: 2, max: 15, step: 0.5,
+      get: () => CONFIG.color.loop, set: (v) => (CONFIG.color.loop = v),
+      show: (v) => `${v} s`, low: "Short", high: "Long" },
+    { id: "wave-lag", group: "wave", label: "Wave lag", min: 0, max: 1, step: 0.05,
+      get: () => CONFIG.color.lag, set: (v) => (CONFIG.color.lag = v),
+      show: (v) => `${v.toFixed(2)} s`, low: "Together", high: "Trailing" },
+    { id: "wave-light", group: "wave", label: "Wave light", min: 0, max: 1.5, step: 0.05,
+      get: () => CONFIG.color.band, set: (v) => (CONFIG.color.band = v),
+      show: (v) => `+${Math.round(v * 100)}%`, low: "None", high: "Strong" },
     { id: "brightness", group: "light", label: "Brightness", min: 0.02, max: 0.16, step: 0.005,
       get: () => CONFIG.attractor.brightness, set: (v) => (CONFIG.attractor.brightness = v),
       show: (v) => `${Math.round((v / 0.07) * 100)}%`, low: "Dim", high: "Bright" },
@@ -597,18 +821,18 @@ function buildHalvorsen({ a, points, dt }) {
       show: (v) => `±${fmtPct(v)}`, low: "Steady", high: "Strong" },
     { id: "pulse-speed", group: "light", label: "Pulse speed", min: 3, max: 30, step: 1,
       get: () => CONFIG.pulse.perMinute, set: (v) => (CONFIG.pulse.perMinute = v),
-      show: (v) => `${v} / min`, low: "Slow", high: "Fast" },
+      show: (v) => `${v}/min`, low: "Slow", high: "Fast" },
     { id: "wave-speed", group: "ripple", label: "Wave speed", min: 1, max: 30, step: 0.5,
       get: () => 60 / CONFIG.ripple.period, set: (v) => (CONFIG.ripple.period = 60 / v),
-      show: (v) => `${(60 / v).toFixed(1)} s`, low: "Slow", high: "Fast" },
+      show: (v) => `${+(60 / v).toFixed(1)} s`, low: "Slow", high: "Fast" },
     { id: "wave-count", group: "ripple", label: "Waves", min: 1, max: 6, step: 0.5,
       get: () => CONFIG.ripple.waves, set: (v) => (CONFIG.ripple.waves = v),
-      show: (v) => `${v} across`, low: "Long", high: "Tight" },
+      show: (v) => `${v}`, low: "Long", high: "Tight" },
     { id: "bend", group: "ripple", label: "Bend", min: 0, max: 0.1, step: 0.0025,
       get: () => CONFIG.ripple.amplitude, set: (v) => (CONFIG.ripple.amplitude = v),
       show: (v) => `${(v * 100).toFixed(1)}%`, low: "Flat", high: "Deep" },
   ];
-  const STORE = "hdyf-tuning-v1";
+  const STORE = "hdyf-tuning-v2";
   const defaults = Object.fromEntries(SLIDERS.map((s) => [s.id, s.get()]));
   defaults.follow = CONFIG.ripple.followsBreath;
 
@@ -656,6 +880,7 @@ function buildHalvorsen({ a, points, dt }) {
   });
   document.getElementById("copy").addEventListener("click", () => {
     const text = JSON.stringify({
+      color: { loop: CONFIG.color.loop, lag: CONFIG.color.lag, band: CONFIG.color.band },
       attractor: { brightness: CONFIG.attractor.brightness },
       pulse: { perMinute: CONFIG.pulse.perMinute, depth: CONFIG.pulse.depth },
       ripple: {
