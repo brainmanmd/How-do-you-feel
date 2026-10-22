@@ -82,10 +82,6 @@
 .dash td .sw { display: inline-block; width: 12px; height: 12px; margin-right: 8px; vertical-align: -1px; background: var(--c); box-shadow: 0 0 0 1px var(--ink); }
 .dash td.mono { font-family: var(--font-mono); font-size: 12px; }
 
-.fb-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-top: 2px solid var(--ink); }
-.fb-list li { padding: 12px 0; border-bottom: 1px solid color-mix(in srgb, var(--muted) 30%, transparent); display: grid; gap: 4px; }
-.fb-list .when { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
-.fb-list .text { font-size: 15px; line-height: 1.55; max-width: 70ch; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 .dash-tip {
   position: fixed; z-index: 20; pointer-events: none;

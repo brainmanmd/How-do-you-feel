@@ -76,63 +76,8 @@
   .shape.half {
     width: 30vmin; height: 15vmin; background: var(--blue);
     border-radius: 15vmin 15vmin 0 0;
-    left: 5vw; top: calc(63% - 15vmin);
+    left: calc(50% + 24vmin); top: 12vh;
   }
-
-  .caption {
-    position: absolute;
-    left: max(32px, env(safe-area-inset-left, 0px));
-    top: 32px;
-    display: grid; gap: 6px;
-    max-width: 40ch;
-  }
-  .caption h2 {
-    margin: 0; font-weight: 700; font-size: 15px;
-    letter-spacing: 0.14em; text-transform: uppercase;
-  }
-  .caption p {
-    margin: 0; font-family: var(--font-mono); font-size: 12px;
-    color: var(--muted); line-height: 1.6;
-    font-variant-numeric: tabular-nums;
-  }
-  /* Feedback card (tester notes) */
-  .feedback {
-    position: absolute;
-    right: max(32px, env(safe-area-inset-right, 0px)); top: 32px;
-    width: 300px;
-    display: grid; gap: 10px;
-    padding: 16px 18px 18px;
-    background: var(--ground);
-    border: 3px solid var(--ink);
-  }
-  .feedback h2 {
-    margin: 0; font-size: 12px; font-weight: 700;
-    letter-spacing: 0.18em; text-transform: uppercase;
-  }
-  .feedback p { margin: 0; font-size: 13px; line-height: 1.5; }
-  .feedback textarea {
-    width: 100%; resize: vertical; min-height: 96px;
-    font: 14px/1.5 var(--font-display); color: var(--ink);
-    background: transparent; border: 2px solid var(--ink); border-radius: 0; padding: 8px 10px;
-  }
-  .feedback textarea:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
-  .feedback .fb-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .feedback button {
-    font: 700 11px/1 var(--font-display); letter-spacing: 0.16em; text-transform: uppercase;
-    padding: 10px 14px; border: 2px solid var(--ink); border-radius: 0;
-    background: var(--ink); color: var(--ground); cursor: pointer;
-  }
-  .feedback button:disabled { opacity: 0.5; cursor: default; }
-  .feedback button:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
-  .feedback .note {
-    font-family: var(--font-mono); font-size: 11px; line-height: 1.6; color: var(--muted);
-  }
-  .feedback .note:empty { display: none; }
-  .feedback .note.warn { color: var(--red); }
-  .feedback .record { padding-top: 10px; border-top: 2px solid var(--ink); }
-
-  /* The static-hosting build (scripts/build-pages.sh) has no shared database yet */
-  html.standalone .feedback { display: none; }
 
   /* Two views share one page: the check-in, and #readings for the owner */
   body[data-view="readings"] { overflow: auto; }
@@ -144,8 +89,6 @@
     .stage { height: auto; min-height: 100%; grid-template-rows: none; }
     .phone-slot { height: auto; }
     .phone { height: auto; width: min(390px, 100%); }
-    .feedback { position: static; width: min(390px, 100%); }
-    .caption { display: none; }
   }
 
   /* Phone */
@@ -342,7 +285,7 @@
     .phone-slot { height: auto; }
     .phone { height: auto; width: min(390px, 100%); }
     .sliders { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .caption, .shape.half, .shape.square { display: none; }
+    .shape.half, .shape.square { display: none; }
     .shape.circle { width: 70vw; height: 70vw; left: -24vw; top: -10vw; }
     .shape.bar { width: 100%; top: 72%; }
   }
@@ -386,18 +329,6 @@
   </div>
   </div>
 
-  <aside class="feedback" aria-labelledby="fb-title">
-    <h2 id="fb-title">Feedback</h2>
-    <p>Tried the check-in? Tell us what felt right and what felt off: the colours, the timing, the glow.</p>
-    <label class="note" for="fb-text">Your note is saved without your name.</label>
-    <textarea id="fb-text" maxlength="2000" rows="5"></textarea>
-    <div class="fb-row">
-      <button type="button" id="fb-send">Send feedback</button>
-      <span class="note" id="fb-status" role="status"></span>
-    </div>
-    <p class="note record" id="record-status" role="status">Each colour you lock in is recorded anonymously.</p>
-  </aside>
-
   <section class="panel" aria-label="Tune the display">
     <div class="group wave">
       <h2>Colour wave</h2>
@@ -423,10 +354,6 @@
     </div>
   </section>
 
-  <aside class="caption">
-    <h2>Halvorsen attractor</h2>
-    <p id="spec">a = 1.4 · 200,000 points</p>
-  </aside>
 </main>
 
 <section id="dashboard" aria-label="Readings"></section>
@@ -454,7 +381,7 @@ const CONFIG = {
     dt: 0.004,        // integration step
     fill: 1.15,       // shape radius vs half the screen width (the outer tips may reach the edge)
     pointSize: 2.0,   // CSS px
-    brightness: 0.07, // per-point light; points add up where they overlap
+    brightness: 0.035, // per-point light; points add up where they overlap
     spin: 0.05,       // rad/s around the symmetry axis
     tilt: 0.22,       // rad, leans the symmetry axis away from the camera
     sway: 0.12,       // rad, slow wobble on top of the tilt
@@ -470,28 +397,28 @@ const CONFIG = {
       { name: "yellow", l: 0.91, c: 0.17, h: 455 },
       { name: "green",  l: 0.88, c: 0.10, h: 505 },
     ],
-    loop: 5,          // seconds for one full trip round the wheel
+    loop: 5.5,        // seconds for one full trip round the wheel
     dwell: 0.15,      // share of each segment spent resting on the pure stop
-    lag: 0.35,        // seconds the top of the shape trails the bottom
+    lag: 0.05,        // seconds the top of the shape trails the bottom
     band: 0.6,        // extra light on the wave front while colours change
     flare: 0.9,       // brightness kick when a colour locks in
     resetTime: 0.8,   // seconds to fade back to green on "Try again"
   },
   pulse: {
-    perMinute: 12,    // breaths per minute
-    depth: 0.16,      // 0..1 brightness swing
+    perMinute: 9,     // breaths per minute
+    depth: 0.19,      // 0..1 brightness swing
     glowFollows: true,
     glowSwing: 0.25,  // 0..1 bloom swing when glowFollows is on
     holdSpeedup: 1.5, // breath quickens while the screen is held
   },
   ripple: {
-    amplitude: 0.035, // displacement as a share of the shape's radius
-    waves: 2,         // crests between the centre and the outer edge
-    period: 12,       // seconds for one crest to travel outward
+    amplitude: 0.0775, // displacement as a share of the shape's radius
+    waves: 1,         // crests between the centre and the outer edge
+    period: 8.57,     // seconds for one crest to travel outward
     glow: 0.3,        // extra light riding on each crest
     followsBreath: true, // ripple swells with the pulse
   },
-  glow: { strength: 1.0, radius: 0.6, threshold: 0.05 },
+  glow: { strength: 0.45, radius: 0.6, threshold: 0.05 },
   button: { glow: 0.6 }, // strength of the soft colour fill inside the timer ring (0..1)
 };
 
@@ -970,7 +897,7 @@ function buildHalvorsen({ a, points, dt }) {
       show: (v) => `+${Math.round(v * 100)}%`, low: "None", high: "Strong" },
     { id: "brightness", group: "light", label: "Brightness", min: 0.02, max: 0.16, step: 0.005,
       get: () => CONFIG.attractor.brightness, set: (v) => (CONFIG.attractor.brightness = v),
-      show: (v) => `${Math.round((v / 0.07) * 100)}%`, low: "Dim", high: "Bright" },
+      show: (v) => `${Math.round((v / 0.035) * 100)}%`, low: "Dim", high: "Bright" },
     { id: "pulse-depth", group: "light", label: "Pulse depth", min: 0, max: 0.6, step: 0.01,
       get: () => CONFIG.pulse.depth, set: (v) => (CONFIG.pulse.depth = v),
       show: (v) => `±${fmtPct(v)}`, low: "Steady", high: "Strong" },
@@ -994,7 +921,7 @@ function buildHalvorsen({ a, points, dt }) {
       set: (v) => { CONFIG.button.glow = v; document.getElementById("timer").style.setProperty("--fill-strength", v); },
       show: (v) => `${Math.round(v * 100)}%`, low: "None", high: "Strong" },
   ];
-  const STORE = "hdyf-tuning-v2";
+  const STORE = "hdyf-tuning-v3";
   const defaults = Object.fromEntries(SLIDERS.map((s) => [s.id, s.get()]));
   defaults.follow = CONFIG.ripple.followsBreath;
 
@@ -1063,8 +990,9 @@ function buildHalvorsen({ a, points, dt }) {
   });
 })();
 
-// Anonymous record. Each reading and each feedback note is saved as one document in the
-// page's shared database ("readings", "feedback") with no viewer id, name or device id.
+// Anonymous record. Each reading is saved as one document in the page's shared
+// database ("readings") with no viewer id, name or device id. Off claude.ai there is
+// no database, so nothing is saved.
 // The owner's dashboard (#readings, dashboard.js) reads them back.
 const RECORD = (() => {
   const db = window.claude?.use ? window.claude.use("db").catch(() => null) : Promise.resolve(null);
@@ -1089,38 +1017,10 @@ const RECORD = (() => {
 })();
 
 (function recorder() {
-  const status = document.getElementById("record-status");
-  const say = (msg, warn) => { status.textContent = msg; status.classList.toggle("warn", !!warn); };
-  document.addEventListener("mood:chosen", async (e) => {
-    say("Recording your reading\u2026");
-    try {
-      await RECORD.add("readings", { v: 1, ...e.detail });
-      say("Your reading was recorded anonymously.");
-    } catch (err) {
-      say(RECORD.explain(err), true);
-    }
-  });
-})();
-
-(function feedback() {
-  const text = document.getElementById("fb-text");
-  const send = document.getElementById("fb-send");
-  const status = document.getElementById("fb-status");
-  const say = (msg, warn) => { status.textContent = msg; status.classList.toggle("warn", !!warn); };
-  send.addEventListener("click", async () => {
-    const body = text.value.trim();
-    if (!body) { say("Write a note first.", true); text.focus(); return; }
-    send.disabled = true;
-    say("Sending\u2026");
-    try {
-      await RECORD.add("feedback", { v: 1, text: body.slice(0, 2000), at: new Date().toISOString() });
-      text.value = "";
-      say("Thanks, sent.");
-    } catch (err) {
-      say(RECORD.explain(err), true);
-    } finally {
-      send.disabled = false;
-    }
+  document.addEventListener("mood:chosen", (e) => {
+    RECORD.add("readings", { v: 1, ...e.detail }).catch((err) => {
+      if (err?.code !== "no_store") console.warn(RECORD.explain(err));
+    });
   });
 })();
 </script>

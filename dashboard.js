@@ -95,12 +95,6 @@
               </table>
             </div>
           </section>
-
-          <section class="card">
-            <h2>Feedback</h2>
-            <p class="sub" id="fb-note">Notes testers send from the check-in.</p>
-            <ul class="fb-list" id="fb-list"></ul>
-          </section>
         </div>
         <div class="dash-tip" id="dash-tip" hidden></div>
       </div>`;
@@ -320,26 +314,6 @@
     }
   }
 
-  function drawFeedback(notes) {
-    const list = document.getElementById("fb-list");
-    list.replaceChildren();
-    document.getElementById("fb-note").textContent = notes.length
-      ? `${notes.length} note${notes.length === 1 ? "" : "s"} from testers, newest first.`
-      : "No feedback yet. Notes testers send from the check-in appear here.";
-    for (const n of notes) {
-      const li = document.createElement("li");
-      const when = document.createElement("span");
-      when.className = "when";
-      when.textContent = fmtTime.format(new Date(n.at));
-      const text = document.createElement("p");
-      text.className = "text";
-      text.style.margin = "0";
-      text.textContent = n.text;
-      li.append(when, text);
-      list.append(li);
-    }
-  }
-
   // ---------- CSV ----------
   function wireCsv(getRows) {
     const btn = document.getElementById("dash-csv");
@@ -395,15 +369,10 @@
       drawTable(rows);
     };
     render();
-    drawFeedback([]);
 
     db.collection("readings").orderBy("at", "desc").limit(1000).onSnapshot(
       (snap) => { rows = snap.docs.map((d) => d.data()).filter(valid); render(); },
       () => showGate("The readings could not be loaded. Reload the page to try again.")
-    );
-    db.collection("feedback").orderBy("at", "desc").limit(300).onSnapshot(
-      (snap) => drawFeedback(snap.docs.map((d) => d.data()).filter((n) => n && typeof n.text === "string" && typeof n.at === "string")),
-      () => {}
     );
   }
 })();
